@@ -5,6 +5,7 @@ authors:
   - Quentin Kniep
   - Kobi Sliwinski
   - Roger Wattenhofer
+  - Richard Patterson
 category: Standard
 type: Core
 status: Review

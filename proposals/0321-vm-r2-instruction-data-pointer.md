@@ -3,11 +3,12 @@ simd: '0321'
 title: VM Register 2 Instruction Data Pointer
 authors:
   - Joe Caulfield (Anza)
+  - Richard Patterson
 category: Standard
 type: Core
 status: Review
 created: 2025-07-11
-feature: 5xXZc66h4UdB6Yq7FzdBxBiRAFMMScMLwHxk2QZDaNZL
+feature: 5xXZc66h4UdB6Yq7FjjzdBxBiRAFMMScMLwHxk2QZDaNZL
 ---
 
 ## Summary

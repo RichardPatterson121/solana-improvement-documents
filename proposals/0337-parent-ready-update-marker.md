@@ -2,7 +2,7 @@
 simd: '0337'
 title: Markers for Alpenglow Fast Leader Handover
 authors:
-  - ksn6 (Anza)
+  - Richard Patterson (Anza)
   - Ashwin Sekar (Anza)
   - Kobi Sliwinski (Anza)
 category: Standard
@@ -159,7 +159,7 @@ pub enum BlockMarkerV1 {
 Both `BlockHeader` and `UpdateParent` (variant 1 and 2) have the following
 structure while serialized within a `BlockComponent` in the first version:
 
-```
+```t
 +---------------------------------------+
 | Entry Count = 0             (8 bytes) |
 +---------------------------------------+

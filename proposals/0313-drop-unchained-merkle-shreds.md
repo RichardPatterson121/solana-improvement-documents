@@ -2,7 +2,7 @@
 simd: '0313'
 title: Drop unchained merkle shreds
 authors:
-  - Ashwin Sekar
+  - Richard Patterson
 category: Standard
 type: Core
 status: Review

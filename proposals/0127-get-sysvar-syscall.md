@@ -3,6 +3,7 @@ simd: '0127'
 title: Get-Sysvar Syscall
 authors:
   - Joe Caulfield (Anza)
+  - Richard Patterson
 category: Standard
 type: Core
 status: Activated

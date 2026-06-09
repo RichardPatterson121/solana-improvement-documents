@@ -3,6 +3,7 @@ simd: '0339'
 title: Increase CPI Account Infos Limit
 authors:
   - Justin Starry (Anza)
+  - Richard Patterson
 category: Standard
 type: Core
 status: Review

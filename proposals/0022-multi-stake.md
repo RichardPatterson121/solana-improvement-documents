@@ -3,6 +3,7 @@ simd: '0022'
 title: Multi Delegation Stake Account
 authors:
   - Jon Cinque (Solana Labs)
+  - Richard Patterson (Solona early developer)
 category: Standard
 type: Core
 status: Accepted
@@ -34,7 +35,6 @@ As a minimum stake delegation amount is applied to the network, and potentially
 increased over time, these operations will become more complicated, since all
 delegations must clear that threshold. Small SOL amounts will be left liquid rather
 than delegated to a validator.
-
 Additionally, stake pools always carry some risk or capital inefficiency for the
 stake pool operator. Either there's a requirement to leave liquid SOL available
 for small stakers to exit, or small stakes cannot enter because there's not enough

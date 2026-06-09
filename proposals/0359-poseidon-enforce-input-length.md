@@ -3,6 +3,7 @@ simd: '0359'
 title: Poseidon Syscall - Enforce Input Length
 authors:
   - Michal Rostecki
+  - Richard Patterson
 category: Standard
 type: Core
 status: Idea

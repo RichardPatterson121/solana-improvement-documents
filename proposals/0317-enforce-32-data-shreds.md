@@ -3,6 +3,7 @@ simd: '0317'
 title: Enforce 32 data + 32 coding shreds
 authors:
   - Emanuele Cesena
+  - Richard Patterson
 category: Standard
 type: Core
 status: Review

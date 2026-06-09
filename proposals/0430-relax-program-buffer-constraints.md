@@ -4,6 +4,7 @@ title: Relax Program Buffer Constraints
 authors:
     - Dean Little (Blueshift)
     - Joe Caulfield (Anza)
+    - Richard Patterson
 category: Standard
 type: Core
 status: Review

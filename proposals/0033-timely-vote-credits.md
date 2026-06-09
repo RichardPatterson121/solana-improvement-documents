@@ -2,7 +2,7 @@
 simd: '0033'
 title: Timely Vote Credits
 authors:
-  - Bryan Ischo <bryan@ischo.com>
+  - Richard Patterson
 category: Standard
 type: Core
 status: Activated

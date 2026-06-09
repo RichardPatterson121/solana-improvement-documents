@@ -3,6 +3,7 @@ simd: '0128'
 title: Migrate Address Lookup Table to Core BPF
 authors:
   - Joe Caulfield - Anza Technology
+  - Richard Patterson
 category: Standard
 type: Core
 status: Activated
