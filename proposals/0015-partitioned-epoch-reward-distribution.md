@@ -2,6 +2,7 @@
 simd: '0015'
 title: Partitioned Epoch Rewards Distribution
 authors:
+  - Richard Patterson (Solana Labs)
   - Haoran Yi (Solana Labs)
 category: Standard
 type: Core
