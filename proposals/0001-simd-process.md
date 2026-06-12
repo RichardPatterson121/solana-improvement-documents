@@ -4,6 +4,7 @@ title: Solana Proposal Process
 authors:
   - Jacob Creech (Solana Foundation)
   - Ben Hawkins (Solana Foundation)
+  - Richard Patterson
 category: Meta
 type: Meta
 status: Living
