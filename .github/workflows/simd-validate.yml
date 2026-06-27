@@ -1,0 +1,202 @@
+name: SIMD Proposal Validation
+
+on:
+  pull_request:
+    types:
+      - opened
+      - reopened
+      - synchronize
+      - ready_for_review
+      - edited
+    paths:
+      - 'proposals/**.md'
+  push:
+    branches:
+      - '**'
+    paths:
+      - 'proposals/**.md'
+
+jobs:
+  validate-simd:
+    name: Validate SIMD Proposals
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install pyyaml
+
+      - name: Detect changed proposal files
+        id: changed
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            FILES=$(git diff --name-only origin/${{ github.base_ref }}...HEAD -- 'proposals/*.md' | tr '\n' ' ')
+          else
+            FILES=$(git diff --name-only HEAD~1 HEAD -- 'proposals/*.md' 2>/dev/null | tr '\n' ' ')
+            if [ -z "$FILES" ]; then
+              FILES=$(find proposals -name '*.md' | tr '\n' ' ')
+            fi
+          fi
+          echo "files=$FILES" >> $GITHUB_OUTPUT
+          echo "Validating: $FILES"
+
+      - name: Validate SIMD proposals
+        if: steps.changed.outputs.files != ''
+        run: |
+          python3 << 'PYEOF'
+          import sys
+          import os
+          import re
+          import yaml
+
+          REQUIRED_FRONTMATTER = ['simd', 'title', 'authors', 'category', 'type', 'status', 'created']
+          VALID_STATUSES = ['Idea', 'Draft', 'Review', 'Accepted', 'Living', 'Stagnant', 'Withdrawn', 'Implemented', 'Activated']
+          VALID_CATEGORIES = ['Standard', 'Meta', 'Advisory']
+          VALID_TYPES = ['Core', 'Networking', 'Interface', 'Meta']
+
+          REQUIRED_SECTIONS = [
+              'Summary',
+              'Motivation',
+              'Detailed Design',
+              'Alternatives Considered',
+              'Impact',
+              'Security Considerations',
+          ]
+
+          # Sections required by updated template (April 2026)
+          UPDATED_TEMPLATE_SECTIONS = ['Conformance']
+
+          # RFC 2119 keywords that MUST be uppercase when used normatively
+          RFC2119_KEYWORDS = ['MUST', 'MUST NOT', 'REQUIRED', 'SHALL', 'SHALL NOT',
+                              'SHOULD', 'SHOULD NOT', 'RECOMMENDED', 'NOT RECOMMENDED',
+                              'MAY', 'OPTIONAL']
+
+          # Lowercase variants that suggest incorrect usage
+          RFC2119_LOWERCASE = ['must not', 'shall not', 'should not', 'not recommended']
+
+          files_str = os.environ.get('CHANGED_FILES', '')
+          if not files_str:
+              import subprocess
+              result = subprocess.run(['bash', '-c', "echo '${{ steps.changed.outputs.files }}"], capture_output=True, text=True)
+              files_str = result.stdout.strip()
+
+          # Read file list from a temp file written by the shell step
+          changed_files = '${{ steps.changed.outputs.files }}'.split()
+          proposal_files = [f for f in changed_files if f.startswith('proposals/') and f.endswith('.md')]
+
+          if not proposal_files:
+              print('No proposal files to validate.')
+              sys.exit(0)
+
+          errors = []
+          warnings = []
+
+          for filepath in proposal_files:
+              if not os.path.exists(filepath):
+                  print(f'Skipping {filepath} (not found in workspace)')
+                  continue
+
+              print(f'\n--- Validating {filepath} ---')
+              with open(filepath, 'r', encoding='utf-8') as f:
+                  content = f.read()
+
+              # --- Front matter ---
+              fm_match = re.match(r'^---\n(.*?)\n---', content, re.DOTALL)
+              if not fm_match:
+                  errors.append(f'{filepath}: Missing or malformed YAML front matter')
+                  continue
+
+              try:
+                  fm = yaml.safe_load(fm_match.group(1))
+              except yaml.YAMLError as e:
+                  errors.append(f'{filepath}: YAML parse error in front matter: {e}')
+                  continue
+
+              for field in REQUIRED_FRONTMATTER:
+                  if field not in fm or fm[field] is None:
+                      errors.append(f'{filepath}: Missing required front matter field: {field}')
+
+              if 'status' in fm and fm['status'] not in VALID_STATUSES:
+                  errors.append(f"{filepath}: Invalid status '{fm['status']}'. Must be one of: {VALID_STATUSES}")
+
+              if 'category' in fm and fm['category'] not in VALID_CATEGORIES:
+                  errors.append(f"{filepath}: Invalid category '{fm['category']}'. Must be one of: {VALID_CATEGORIES}")
+
+              if 'type' in fm and fm['type'] not in VALID_TYPES:
+                  errors.append(f"{filepath}: Invalid type '{fm['type']}'. Must be one of: {VALID_TYPES}")
+
+              # --- Filename vs simd number ---
+              filename = os.path.basename(filepath)
+              if 'simd' in fm:
+                  simd_num = str(fm['simd']).zfill(4)
+                  if not filename.startswith(simd_num):
+                      errors.append(f'{filepath}: Filename must start with SIMD number {simd_num} (got {filename})')
+
+              # --- Required sections ---
+              body = content[fm_match.end():]
+              for section in REQUIRED_SECTIONS:
+                  pattern = rf'^#{1,3}\s+{re.escape(section)}\s*$'
+                  if not re.search(pattern, body, re.MULTILINE | re.IGNORECASE):
+                      errors.append(f'{filepath}: Missing required section: ## {section}')
+
+              for section in UPDATED_TEMPLATE_SECTIONS:
+                  pattern = rf'^#{1,3}\s+{re.escape(section)}\s*$'
+                  if not re.search(pattern, body, re.MULTILINE | re.IGNORECASE):
+                      warnings.append(f'{filepath}: Missing recommended section (updated template): ## {section}')
+
+              # --- Edge Cases and Validator Components subsections ---
+              if not re.search(r'^#{2,4}\s+Edge Cases', body, re.MULTILINE | re.IGNORECASE):
+                  warnings.append(f'{filepath}: Missing recommended subsection: ### Edge Cases (inside Detailed Design)')
+
+              if not re.search(r'^#{2,4}\s+Validator Components', body, re.MULTILINE | re.IGNORECASE):
+                  warnings.append(f'{filepath}: Missing recommended subsection: ### Validator Components Affected (inside Detailed Design)')
+
+              # --- RFC 2119 lowercase misuse check ---
+              for kw in RFC2119_LOWERCASE:
+                  # Look for lowercase usage outside code blocks
+                  code_stripped = re.sub(r'```.*?```', '', body, flags=re.DOTALL)
+                  code_stripped = re.sub(r'`[^`]+`', '', code_stripped)
+                  if re.search(rf'\b{re.escape(kw)}\b', code_stripped):
+                      warnings.append(f"{filepath}: RFC 2119 keyword '{kw}' used lowercase — should be '{kw.upper()}' when used normatively")
+
+              # --- Dependencies section link format ---
+              deps_match = re.search(r'## Dependencies(.*?)(?=^##)', body, re.DOTALL | re.MULTILINE)
+              if deps_match:
+                  deps_body = deps_match.group(1)
+                  simd_refs = re.findall(r'SIMD-\d+', deps_body)
+                  for ref in simd_refs:
+                      num = re.search(r'\d+', ref).group()
+                      link_pattern = rf'\[{re.escape(ref)}\]:\s*https://github\.com/solana-foundation/solana-improvement-documents/pull/'
+                      if not re.search(link_pattern, deps_body):
+                          warnings.append(f'{filepath}: Dependency {ref} missing markdown link in format [SIMD-XXXX]: https://github.com/solana-foundation/solana-improvement-documents/pull/XXXX')
+
+              print(f'  Checked: front matter, sections, RFC 2119, dependency links')
+
+          # --- Report ---
+          if warnings:
+              print('\n=== WARNINGS ===')
+              for w in warnings:
+                  print(f'  WARNING: {w}')
+
+          if errors:
+              print('\n=== ERRORS ===')
+              for e in errors:
+                  print(f'  ERROR: {e}')
+              print(f'\n{len(errors)} error(s) found. Fix before merging.')
+              sys.exit(1)
+          else:
+              print(f'\nAll {len(proposal_files)} proposal(s) passed validation.')
+              if warnings:
+                  print(f'{len(warnings)} warning(s) — review recommended but not blocking.')
+          PYEOF
+        env:
+          CHANGED_FILES: ${{ steps.changed.outputs.files }}
