@@ -1,0 +1,184 @@
+name: Rotor Propagation Budget Validator
+
+# Validates that any proposal touching dissemination/latency documents
+# a propagation path that fits within the 150ms slot time target from
+# SIMD-0525. Enforces the structural argument: leader→first-tier→target
+# must fit within the slot budget at p99.
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize, ready_for_review, edited]
+    paths:
+      - 'proposals/**.md'
+  push:
+    branches: ['**']
+    paths:
+      - 'proposals/**.md'
+
+jobs:
+  propagation-budget:
+    name: Propagation Budget Check (150ms target)
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detect changed proposals
+        id: changed
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            FILES=$(git diff --name-only origin/${{ github.base_ref }}...HEAD -- 'proposals/*.md' | tr '\n' ' ')
+          else
+            FILES=$(git diff --name-only HEAD~1 HEAD -- 'proposals/*.md' 2>/dev/null | tr '\n' ' ')
+            [ -z "$FILES" ] && FILES=$(find proposals -name '*.md' | tr '\n' ' ')
+          fi
+          echo "files=$FILES" >> $GITHUB_OUTPUT
+
+      - name: Validate propagation budget documentation
+        if: steps.changed.outputs.files != ''
+        run: |
+          python3 << 'PYEOF'
+          import os, re, sys
+
+          SLOT_TARGET_MS = 150
+          # Maximum safe single-hop RTT to leave margin for FEC + voting
+          MAX_SINGLE_HOP_MS = 60
+          # Maximum total documented path budget
+          MAX_PATH_BUDGET_MS = 130  # p99 target from SIMD-0532 Phase 2 exit criterion
+
+          # Keywords that signal a proposal touches dissemination latency
+          LATENCY_SIGNALS = [
+              'turbine', 'rotor', 'retransmit', 'shred', 'relay',
+              'dissemination', 'propagation', 'slot time', 'slot budget',
+              'first-tier', 'smart sampling'
+          ]
+
+          # Patterns for documented latency values (e.g. ~40ms, ≤150ms, 120ms)
+          LATENCY_PATTERN = re.compile(
+              r'(?:~|≤|<=|\u2264|approximately\s+)?(\d+)\s*ms',
+              re.IGNORECASE
+          )
+
+          # Pattern for p99 latency documentation
+          P99_PATTERN = re.compile(r'p99', re.IGNORECASE)
+          P50_PATTERN = re.compile(r'p50', re.IGNORECASE)
+
+          changed = '${{ steps.changed.outputs.files }}'.split()
+          proposals = [f for f in changed if f.startswith('proposals/') and f.endswith('.md')]
+
+          errors = []
+          warnings = []
+          info = []
+
+          for filepath in proposals:
+              if not os.path.exists(filepath):
+                  continue
+
+              with open(filepath, 'r', encoding='utf-8') as f:
+                  content = f.read()
+
+              lower = content.lower()
+
+              # Check if this proposal touches latency-sensitive components
+              touches_latency = any(sig in lower for sig in LATENCY_SIGNALS)
+              if not touches_latency:
+                  info.append(f'{filepath}: No dissemination/latency keywords detected — skipping budget check')
+                  continue
+
+              print(f'\n[{filepath}] Dissemination-sensitive proposal detected — running budget checks')
+
+              # Strip code blocks before analysis to avoid false positives
+              body = re.sub(r'```.*?```', '', content, flags=re.DOTALL)
+              body = re.sub(r'`[^`]+`', '', body)
+
+              # Check p50/p99 documentation
+              has_p99 = bool(P99_PATTERN.search(body))
+              has_p50 = bool(P50_PATTERN.search(body))
+
+              if touches_latency and not has_p99:
+                  warnings.append(
+                      f'{filepath}: Proposal touches dissemination but does not document '
+                      f'p99 latency — SIMD-0532 Phase 2 exit criterion requires '
+                      f'rotor_relay_latency_ms p99 ≤ 150ms'
+                  )
+              if touches_latency and not has_p50:
+                  warnings.append(
+                      f'{filepath}: Proposal touches dissemination but does not document '
+                      f'p50 latency baseline'
+                  )
+
+              # Extract all documented latency values
+              latency_values = [
+                  int(m.group(1)) for m in LATENCY_PATTERN.finditer(body)
+              ]
+
+              if latency_values:
+                  max_documented = max(latency_values)
+                  print(f'  Documented latency values: {sorted(set(latency_values))}ms')
+                  print(f'  Maximum documented value: {max_documented}ms')
+                  print(f'  Slot target: {SLOT_TARGET_MS}ms')
+                  print(f'  p99 path budget: {MAX_PATH_BUDGET_MS}ms')
+
+                  if max_documented > SLOT_TARGET_MS:
+                      # Only error if the value is NOT labeled as a Turbine
+                      # comparison (expected to be over budget — that's the point)
+                      surrounding = ''
+                      for m in LATENCY_PATTERN.finditer(body):
+                          if int(m.group(1)) == max_documented:
+                              start = max(0, m.start() - 120)
+                              surrounding = body[start:m.end() + 120]
+                              break
+
+                      turbine_context = any(t in surrounding.lower() for t in
+                          ['turbine', 'before rotor', 'without rotor', 'current path',
+                           'baseline', 'comparison', 'vs turbine', 'exceeds'])
+
+                      if not turbine_context:
+                          errors.append(
+                              f'{filepath}: Documented latency value {max_documented}ms '
+                              f'exceeds 150ms slot target and is not labeled as a '
+                              f'Turbine/baseline comparison. Rotor path values MUST '
+                              f'fit within {MAX_PATH_BUDGET_MS}ms at p99.'
+                          )
+                      else:
+                          print(f'  INFO: {max_documented}ms appears to be a Turbine/baseline '
+                                f'comparison value — not flagging as error')
+
+              # Check that hop limit is documented for relay proposals
+              if 'rotor' in lower or 'relay' in lower:
+                  if 'hop limit' not in lower and 'hop_limit' not in lower:
+                      warnings.append(
+                          f'{filepath}: Relay proposal missing hop limit documentation. '
+                          f'SIMD-0530 sets hop limit = 2 to bound amplification '
+                          f'and keep total path within 150ms budget.'
+                      )
+
+              # Check 150ms target is explicitly referenced
+              if 'rotor' in lower:
+                  if '150' not in body and '150ms' not in body.lower():
+                      warnings.append(
+                          f'{filepath}: Rotor proposal does not explicitly reference '
+                          f'the 150ms slot target from SIMD-0525. '
+                          f'Add a Detailed Design note on slot budget compatibility.'
+                      )
+
+          # Summary
+          for i in info:
+              print(f'INFO: {i}')
+          if warnings:
+              print('\n=== WARNINGS ===')
+              for w in warnings:
+                  print(f'WARNING: {w}')
+          if errors:
+              print('\n=== ERRORS ===')
+              for e in errors:
+                  print(f'ERROR: {e}')
+              print(f'\n{len(errors)} propagation budget error(s). Fix before merging.')
+              sys.exit(1)
+          else:
+              print(f'\nPropagation budget check passed.')
+          PYEOF
+        env:
+          CHANGED_FILES: ${{ steps.changed.outputs.files }}

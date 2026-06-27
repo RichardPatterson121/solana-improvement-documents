@@ -1,0 +1,264 @@
+name: Rotor Shadow Mode Metric Validator
+
+# Validates that SIMD-0531/0532 shadow mode go/no-go thresholds are
+# present, internally consistent, and correctly reference the 150ms
+# slot target. Based on SIMD-0532 Phase 1 and Phase 2 exit criteria.
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize, ready_for_review, edited]
+    paths:
+      - 'proposals/0531*.md'
+      - 'proposals/0532*.md'
+      - 'proposals/053*.md'
+  push:
+    branches: ['**']
+    paths:
+      - 'proposals/0531*.md'
+      - 'proposals/0532*.md'
+      - 'proposals/053*.md'
+
+jobs:
+  shadow-metrics:
+    name: Shadow Mode Threshold Validation
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Validate shadow mode thresholds
+        run: |
+          python3 << 'PYEOF'
+          import os, re, sys
+
+          # Expected go/no-go thresholds from SIMD-0532
+          PHASE1_THRESHOLDS = {
+              'gini':           {'pattern': r'[Gg]ini', 'expected_bound': 0.40,
+                                 'label': 'Reliability score Gini coefficient ≤ 0.40'},
+              'clean_slots':    {'pattern': r'10[,.]?000\s*(?:consecutive\s*)?slots',
+                                 'label': '≥10,000 consecutive clean slots'},
+              'p99_multiplier': {'pattern': r'[Tt]urbine\s*[×x\*]\s*1\.2',
+                                 'label': 'p99 ≤ Turbine × 1.2'},
+          }
+
+          PHASE2_THRESHOLDS = {
+              'coverage':       {'pattern': r'95\s*%',
+                                 'label': 'Coverage ≥ 95% of stake'},
+              'skip_rate':      {'pattern': r'[+\+]?0\.5\s*%',
+                                 'label': 'Skip rate delta ≤ +0.5%'},
+              'p99_latency':    {'pattern': r'150\s*ms',
+                                 'label': 'p99 latency ≤ 150ms'},
+              'epoch_soak':     {'pattern': r'2\s*(?:full\s*)?epochs',
+                                 'label': '≥2 full epochs soak'},
+          }
+
+          PHASE3_THRESHOLDS = {
+              'delivery_rate':  {'pattern': r'99\.5\s*%',
+                                 'label': 'Delivery rate ≥ 99.5%'},
+              'mainnet_coverage': {'pattern': r'97\s*%',
+                                   'label': 'Mainnet coverage ≥ 97% stake'},
+          }
+
+          COEXISTENCE_SLOTS = 50000
+          MIGRATION_OFFSET  = 5000
+
+          errors = []
+          warnings = []
+
+          migration_files = [
+              f for f in os.listdir('proposals')
+              if f.startswith('053') and f.endswith('.md')
+          ]
+
+          if not migration_files:
+              print('No Rotor proposals found — skipping shadow metric validation')
+              sys.exit(0)
+
+          for filename in sorted(migration_files):
+              filepath = os.path.join('proposals', filename)
+              with open(filepath, 'r', encoding='utf-8') as f:
+                  content = f.read()
+
+              lower = content.lower()
+              print(f'\n--- Shadow metric check: {filepath} ---')
+
+              is_migration = 'migration' in lower or '0532' in filename
+              is_impl_plan = 'anza' in lower or 'implementation' in lower or '0531' in filename
+              is_protocol   = '0530' in filename
+
+              if is_migration:
+                  print('  Detected: Migration proposal — checking Phase 1/2/3 thresholds')
+
+                  for key, cfg in PHASE1_THRESHOLDS.items():
+                      if not re.search(cfg['pattern'], content):
+                          errors.append(
+                              f'{filepath}: Missing Phase 1 go/no-go threshold: {cfg["label"]}'
+                          )
+                      else:
+                          print(f'  ✓ Phase 1: {cfg["label"]}')
+
+                  for key, cfg in PHASE2_THRESHOLDS.items():
+                      if not re.search(cfg['pattern'], content):
+                          errors.append(
+                              f'{filepath}: Missing Phase 2 go/no-go threshold: {cfg["label"]}'
+                          )
+                      else:
+                          print(f'  ✓ Phase 2: {cfg["label"]}')
+
+                  for key, cfg in PHASE3_THRESHOLDS.items():
+                      if not re.search(cfg['pattern'], content):
+                          errors.append(
+                              f'{filepath}: Missing Phase 3 go/no-go threshold: {cfg["label"]}'
+                          )
+                      else:
+                          print(f'  ✓ Phase 3: {cfg["label"]}')
+
+                  # Check coexistence window slot count
+                  if '50,000' not in content and '50000' not in content:
+                      errors.append(
+                          f'{filepath}: Missing coexistence window size '
+                          f'(expected 50,000 slots = ~5.5 days at 400ms)'
+                      )
+                  else:
+                      print(f'  ✓ Coexistence window: 50,000 slots documented')
+
+                  # Check migration boundary offset
+                  if '5,000' not in content and '5000' not in content:
+                      warnings.append(
+                          f'{filepath}: Missing migration boundary offset '
+                          f'(R = activation_slot + 5,000 convention from SIMD-0384)'
+                      )
+                  else:
+                      print(f'  ✓ Migration offset: R + 5,000 documented')
+
+                  # Check on-chain migration signal
+                  if 'rotor_migration' not in content:
+                      errors.append(
+                          f'{filepath}: Missing on-chain migration signal '
+                          f'(find_program_address(&[b"rotor_migration"], alpenglow::id()))'
+                      )
+                  else:
+                      print(f'  ✓ On-chain migration signal: present')
+
+                  # Check kill-switch gate
+                  if 'rotor_disabled' not in content:
+                      errors.append(
+                          f'{filepath}: Missing rotor_disabled kill-switch gate '
+                          f'documentation (required for safe rollback without '
+                          f'supermajority reversal vote)'
+                      )
+                  else:
+                      print(f'  ✓ Kill-switch gate: rotor_disabled documented')
+
+                  # Check rollback trigger definition
+                  rollback_trigger = re.search(r'5\s*%.*?100\s*(?:consecutive\s*)?slots', content)
+                  if not rollback_trigger:
+                      warnings.append(
+                          f'{filepath}: Rollback trigger threshold (skip rate >5% '
+                          f'for >100 consecutive slots) not clearly documented'
+                      )
+                  else:
+                      print(f'  ✓ Rollback trigger: >5% skip rate / >100 slots documented')
+
+              if is_impl_plan:
+                  print('  Detected: Implementation plan — checking metrics and gate')
+
+                  # Check all four Prometheus metrics are documented
+                  required_metrics = [
+                      'rotor_shreds_forwarded_total',
+                      'rotor_relay_latency_ms',
+                      'rotor_peer_reliability_score',
+                      'rotor_fallback_to_turbine_total',
+                  ]
+                  for metric in required_metrics:
+                      if metric not in content:
+                          errors.append(
+                              f'{filepath}: Missing required Prometheus metric: {metric}'
+                          )
+                      else:
+                          print(f'  ✓ Metric: {metric}')
+
+                  # Check rotor_enabled feature gate
+                  if 'rotor_enabled' not in content:
+                      errors.append(
+                          f'{filepath}: Missing rotor_enabled feature gate documentation'
+                      )
+                  else:
+                      print(f'  ✓ Feature gate: rotor_enabled')
+
+                  # Check alpenglow_enabled prerequisite
+                  if 'alpenglow_enabled' not in content:
+                      errors.append(
+                          f'{filepath}: Missing alpenglow_enabled prerequisite '
+                          f'(rotor_enabled must have alpenglow_enabled as hard dependency)'
+                      )
+                  else:
+                      print(f'  ✓ Prerequisite: alpenglow_enabled')
+
+                  # Check ContactInfo rotor_version field
+                  if 'rotor_version' not in content:
+                      errors.append(
+                          f'{filepath}: Missing ContactInfo.rotor_version gossip field '
+                          f'documentation (required for Turbine fallback negotiation)'
+                      )
+                  else:
+                      print(f'  ✓ Gossip field: rotor_version')
+
+                  # Check EMA scorer parameters
+                  if 'ReliabilityRecord' not in content:
+                      warnings.append(
+                          f'{filepath}: Missing ReliabilityRecord struct documentation '
+                          f'(ema_delivery_rate, ema_latency_ms, last_updated_slot)'
+                      )
+                  else:
+                      print(f'  ✓ Scorer: ReliabilityRecord documented')
+
+                  if 'shadow' not in lower:
+                      errors.append(
+                          f'{filepath}: Missing shadow mode phase documentation '
+                          f'(Phase 1 devnet shadow is required before testnet activation)'
+                      )
+                  else:
+                      print(f'  ✓ Shadow mode: Phase 1 documented')
+
+              if is_protocol:
+                  print('  Detected: Protocol proposal — checking Smart Sampling spec')
+
+                  if 'reliability_score' not in content:
+                      errors.append(
+                          f'{filepath}: Missing reliability_score sampling function '
+                          f'(P(peer i) ∝ stake(i) × reliability_score(i))'
+                      )
+                  else:
+                      print(f'  ✓ Sampling function: reliability_score documented')
+
+                  if 'hop limit' not in lower and 'hop_limit' not in lower:
+                      errors.append(
+                          f'{filepath}: Missing hop limit (must be 2 to keep '
+                          f'total path within 150ms budget at p99)'
+                      )
+                  else:
+                      print(f'  ✓ Hop limit: documented')
+
+                  if '200' not in content or 'ema' not in lower:
+                      warnings.append(
+                          f'{filepath}: Missing or incomplete EMA window '
+                          f'documentation (200-slot window)'
+                      )
+                  else:
+                      print(f'  ✓ EMA window: 200 slots documented')
+
+          if warnings:
+              print('\n=== WARNINGS ===')
+              for w in warnings:
+                  print(f'WARNING: {w}')
+          if errors:
+              print('\n=== ERRORS ===')
+              for e in errors:
+                  print(f'ERROR: {e}')
+              sys.exit(1)
+          else:
+              print(f'\nShadow metric validation passed.')
+          PYEOF

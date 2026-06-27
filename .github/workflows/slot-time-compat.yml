@@ -1,0 +1,202 @@
+name: Slot Time Compatibility Check
+
+# Cross-checks any SIMD that touches Turbine, Rotor, shred relay,
+# or dissemination against the SIMD-0525 sequencing requirement:
+# Rotor MUST be fully deployed before or concurrent with the
+# 150ms slot time activation to avoid elevated skip rates during
+# the Turbine coexistence window.
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize, ready_for_review, edited]
+    paths:
+      - 'proposals/**.md'
+  push:
+    branches: ['**']
+    paths:
+      - 'proposals/**.md'
+
+jobs:
+  slot-time-compat:
+    name: SIMD-0525 Sequencing Compatibility
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detect changed proposals
+        id: changed
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            FILES=$(git diff --name-only origin/${{ github.base_ref }}...HEAD -- 'proposals/*.md' | tr '\n' ' ')
+          else
+            FILES=$(git diff --name-only HEAD~1 HEAD -- 'proposals/*.md' 2>/dev/null | tr '\n' ' ')
+            [ -z "$FILES" ] && FILES=$(find proposals -name '*.md' | tr '\n' ' ')
+          fi
+          echo "files=$FILES" >> $GITHUB_OUTPUT
+
+      - name: Check slot time sequencing compatibility
+        if: steps.changed.outputs.files != ''
+        run: |
+          python3 << 'PYEOF'
+          import os, re, sys
+
+          # Proposals that define the 150ms slot time target
+          SLOT_TIME_SIMDS = ['0525']
+
+          # Proposals that MUST be sequenced before or with slot time activation
+          MUST_PRECEDE_SLOT_TIME = ['0530', '0532']  # Rotor protocol, Rotor migration
+
+          # Keywords that indicate a proposal affects the Turbine→Rotor transition
+          TRANSITION_KEYWORDS = [
+              'turbine', 'rotor', 'retransmit', 'dissemination',
+              'shred relay', 'relay topology', 'retransmit stage'
+          ]
+
+          # Keywords indicating slot time awareness
+          SLOT_TIME_KEYWORDS = [
+              'slot time', 'slot duration', '150ms', '150 ms',
+              'shorter slot', 'simd-0525', '0525'
+          ]
+
+          changed = '${{ steps.changed.outputs.files }}'.split()
+          proposals = [f for f in changed if f.startswith('proposals/') and f.endswith('.md')]
+
+          # Build index of ALL proposals in repo for cross-referencing
+          all_proposals = {}
+          if os.path.exists('proposals'):
+              for fname in os.listdir('proposals'):
+                  if not fname.endswith('.md'):
+                      continue
+                  m = re.match(r'^(\d{4})', fname)
+                  if m:
+                      all_proposals[m.group(1)] = os.path.join('proposals', fname)
+
+          errors = []
+          warnings = []
+
+          for filepath in proposals:
+              if not os.path.exists(filepath):
+                  continue
+
+              with open(filepath, 'r', encoding='utf-8') as f:
+                  content = f.read()
+
+              lower = content.lower()
+              fname = os.path.basename(filepath)
+              simd_num_match = re.match(r'^(\d{4})', fname)
+              simd_num = simd_num_match.group(1) if simd_num_match else None
+
+              touches_transition = any(kw in lower for kw in TRANSITION_KEYWORDS)
+              touches_slot_time  = any(kw in lower for kw in SLOT_TIME_KEYWORDS)
+
+              print(f'\n[{filepath}]')
+              print(f'  Touches transition layer: {touches_transition}')
+              print(f'  References slot time:     {touches_slot_time}')
+
+              # Rule 1: Dissemination proposals SHOULD reference SIMD-0525
+              if touches_transition and not touches_slot_time:
+                  warnings.append(
+                      f'{filepath}: Proposal affects dissemination/relay topology '
+                      f'but does not reference SIMD-0525 (150ms slot time target). '
+                      f'Add a sequencing note: Rotor MUST be fully deployed before '
+                      f'or concurrent with SIMD-0525 activation to avoid elevated '
+                      f'skip rates during the Turbine coexistence window.'
+                  )
+
+              # Rule 2: If this is SIMD-0525 itself or references slot time reduction,
+              # check that Rotor dependency is documented
+              if touches_slot_time and '0525' in content:
+                  rotor_ref = any(
+                      ref in content for ref in ['0530', 'rotor', 'SIMD-0530']
+                  )
+                  if not rotor_ref:
+                      warnings.append(
+                          f'{filepath}: References SIMD-0525 slot time target but '
+                          f'does not cross-reference SIMD-0530 (Rotor). The 150ms '
+                          f'slot time requires Rotor to be active — document this '
+                          f'dependency or sequencing recommendation.'
+                      )
+
+              # Rule 3: Rotor migration (0532) MUST document SIMD-0525 interaction
+              if simd_num in MUST_PRECEDE_SLOT_TIME:
+                  if not touches_slot_time:
+                      warnings.append(
+                          f'{filepath}: This proposal (SIMD-{simd_num}) is part of '
+                          f'the Rotor suite and MUST document its interaction with '
+                          f'SIMD-0525 (shorter slot times). Add a section or note '
+                          f'on sequencing: Rotor activation SHOULD precede or be '
+                          f'concurrent with SIMD-0525 mainnet activation.'
+                      )
+                  else:
+                      print(f'  ✓ SIMD-0525 sequencing interaction documented')
+
+              # Rule 4: Turbine-only proposals in a post-Rotor world
+              # should note planned deprecation
+              if 'turbine' in lower and 'rotor' not in lower:
+                  if simd_num and int(simd_num) > 530:
+                      warnings.append(
+                          f'{filepath}: Post-SIMD-0530 proposal references Turbine '
+                          f'without referencing Rotor. If this proposal is intended '
+                          f'for the Turbine era only, note that Turbine is deprecated '
+                          f'post-SIMD-0532 activation.'
+                      )
+
+              # Rule 5: Validate that hop limit = 2 is consistent with
+              # 150ms budget arithmetic in any relay proposal
+              if 'rotor' in lower:
+                  hop_limit_match = re.search(r'hop limit[\s:=]+([0-9]+)', lower)
+                  if hop_limit_match:
+                      hop_val = int(hop_limit_match.group(1))
+                      if hop_val > 2:
+                          errors.append(
+                              f'{filepath}: Hop limit {hop_val} exceeds maximum '
+                              f'safe value of 2. At 3+ hops, worst-case path '
+                              f'latency exceeds 150ms slot budget at p99. '
+                              f'SIMD-0530 sets hop limit = 2.'
+                          )
+                      elif hop_val == 2:
+                          print(f'  ✓ Hop limit = 2 (within 150ms budget)')
+                  else:
+                      warnings.append(
+                          f'{filepath}: Rotor proposal does not explicitly state '
+                          f'hop limit value. Must be ≤2 for 150ms compatibility.'
+                      )
+
+              # Rule 6: Coexistence window must be ≤50,000 slots
+              # Longer windows mean the network runs Turbine under short slots longer
+              if '0532' in filepath or 'migration' in lower:
+                  window_match = re.search(r'([0-9][0-9,]+)\s*(?:-|–)?\s*slot', content)
+                  if window_match:
+                      raw = window_match.group(1).replace(',', '')
+                      try:
+                          slot_count = int(raw)
+                          if slot_count > 50000:
+                              warnings.append(
+                                  f'{filepath}: Coexistence window {slot_count:,} slots '
+                                  f'exceeds recommended maximum of 50,000 slots. '
+                                  f'A longer window increases the period the network '
+                                  f'runs Turbine under compressed 150ms slot times, '
+                                  f'raising skip rate risk.'
+                              )
+                          elif slot_count == 50000:
+                              print(f'  ✓ Coexistence window: 50,000 slots (5.5 days)')
+                      except ValueError:
+                          pass
+
+          if warnings:
+              print('\n=== WARNINGS ===')
+              for w in warnings:
+                  print(f'WARNING: {w}')
+          if errors:
+              print('\n=== ERRORS ===')
+              for e in errors:
+                  print(f'ERROR: {e}')
+              sys.exit(1)
+          else:
+              print('\nSlot time compatibility check passed.')
+          PYEOF
+        env:
+          CHANGED_FILES: ${{ steps.changed.outputs.files }}

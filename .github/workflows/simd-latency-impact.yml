@@ -1,0 +1,170 @@
+name: SIMD Latency Impact Assessment
+
+# Any proposal touching validator pipeline components that affect
+# block propagation latency MUST document its impact on the 150ms
+# slot time budget. This workflow detects latency-sensitive proposals
+# and enforces documentation standards.
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize, ready_for_review, edited]
+    paths:
+      - 'proposals/**.md'
+  push:
+    branches: ['**']
+    paths:
+      - 'proposals/**.md'
+
+jobs:
+  latency-impact:
+    name: Latency Impact Documentation Check
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detect changed proposals
+        id: changed
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            FILES=$(git diff --name-only origin/${{ github.base_ref }}...HEAD -- 'proposals/*.md' | tr '\n' ' ')
+          else
+            FILES=$(git diff --name-only HEAD~1 HEAD -- 'proposals/*.md' 2>/dev/null | tr '\n' ' ')
+            [ -z "$FILES" ] && FILES=$(find proposals -name '*.md' | tr '\n' ' ')
+          fi
+          echo "files=$FILES" >> $GITHUB_OUTPUT
+
+      - name: Assess latency impact documentation
+        if: steps.changed.outputs.files != ''
+        run: |
+          python3 << 'PYEOF'
+          import os, re, sys
+
+          # Validator components known to affect propagation latency
+          LATENCY_SENSITIVE_COMPONENTS = {
+              'turbine':          'Shred dissemination tree — directly affects propagation path',
+              'rotor':            'Rotor dissemination — must fit within 150ms at p99',
+              'retransmit':       'RetransmitStage — hot path, latency-critical',
+              'shred':            'Shred handling — wire-level latency impact',
+              'gossip':           'Gossip — affects peer discovery timing',
+              'tvu':              'Transaction Validation Unit — block receipt pipeline',
+              'slot time':        'Slot time — direct budget constraint',
+              'block propagation':'Block propagation — end-to-end latency',
+              'fec':              'FEC/erasure coding — slice reconstruction time',
+              'banking stage':    'Banking stage — affects block production timing',
+              'poh':              'Proof-of-History — tick schedule drives slot duration',
+              'replay':           'Replay stage — affects confirmation latency',
+          }
+
+          # Documentation patterns that satisfy latency impact requirement
+          LATENCY_DOC_PATTERNS = [
+              r'p50', r'p99', r'p95',
+              r'\d+\s*ms',
+              r'latency',
+              r'propagation.*budget',
+              r'slot.*budget',
+              r'150\s*ms',
+              r'bandwidth',
+          ]
+
+          # Sections where latency impact SHOULD be documented
+          EXPECTED_LATENCY_SECTIONS = ['Impact', 'Detailed Design', 'Security Considerations']
+
+          changed = '${{ steps.changed.outputs.files }}'.split()
+          proposals = [f for f in changed if f.startswith('proposals/') and f.endswith('.md')]
+
+          errors = []
+          warnings = []
+
+          for filepath in proposals:
+              if not os.path.exists(filepath):
+                  continue
+
+              with open(filepath, 'r', encoding='utf-8') as f:
+                  content = f.read()
+
+              lower = content.lower()
+              body = re.sub(r'```.*?```', '', content, flags=re.DOTALL)
+
+              # Detect which latency-sensitive components this proposal touches
+              touched = {
+                  k: v for k, v in LATENCY_SENSITIVE_COMPONENTS.items()
+                  if k in lower
+              }
+
+              if not touched:
+                  print(f'{filepath}: No latency-sensitive components detected — skip')
+                  continue
+
+              print(f'\n[{filepath}] Latency-sensitive components detected:')
+              for k, v in touched.items():
+                  print(f'  → {k}: {v}')
+
+              # Check that at least one latency documentation pattern is present
+              has_latency_doc = any(
+                  re.search(pat, body, re.IGNORECASE)
+                  for pat in LATENCY_DOC_PATTERNS
+              )
+
+              if not has_latency_doc:
+                  errors.append(
+                      f'{filepath}: Touches latency-sensitive components '
+                      f'({list(touched.keys())}) but contains no latency '
+                      f'documentation (p50/p99 values, ms measurements, or '
+                      f'propagation budget analysis). '
+                      f'All proposals affecting dissemination MUST document '
+                      f'impact on the 150ms slot time target.'
+                  )
+              else:
+                  print(f'  ✓ Latency documentation present')
+
+              # Check that the Impact section discusses latency for validators
+              impact_match = re.search(
+                  r'## Impact(.*?)(?=^##|\Z)', body, re.DOTALL | re.MULTILINE
+              )
+              if impact_match:
+                  impact_body = impact_match.group(1).lower()
+                  if 'validator' in impact_body and not any(
+                      re.search(pat, impact_body) for pat in [r'latency', r'bandwidth', r'\d+\s*ms']
+                  ):
+                      warnings.append(
+                          f'{filepath}: Impact section mentions validators but '
+                          f'does not quantify latency or bandwidth impact. '
+                          f'Add latency context for the 150ms slot budget.'
+                      )
+
+              # Special check: if proposal mentions slot time, it MUST
+              # reference 150ms or justify a different target
+              if 'slot time' in lower or 'slot duration' in lower:
+                  if '150' not in body:
+                      warnings.append(
+                          f'{filepath}: Proposal references slot time but does '
+                          f'not reference the 150ms target from SIMD-0525. '
+                          f'Document compatibility or note the target explicitly.'
+                      )
+
+              # Check for SIMD-0525 cross-reference in latency proposals
+              if any(k in lower for k in ['turbine', 'rotor', 'retransmit', 'dissemination']):
+                  if 'simd-0525' not in lower and '0525' not in content:
+                      warnings.append(
+                          f'{filepath}: Dissemination proposal does not cross-reference '
+                          f'SIMD-0525 (Shorter Slot Times). Add a note on sequencing '
+                          f'or compatibility with the 150ms slot target.'
+                      )
+
+          if warnings:
+              print('\n=== WARNINGS ===')
+              for w in warnings:
+                  print(f'WARNING: {w}')
+          if errors:
+              print('\n=== ERRORS ===')
+              for e in errors:
+                  print(f'ERROR: {e}')
+              sys.exit(1)
+          else:
+              print('\nLatency impact assessment passed.')
+          PYEOF
+        env:
+          CHANGED_FILES: ${{ steps.changed.outputs.files }}
