@@ -8,7 +8,7 @@ category: Standard
 type: Core
 status: Review
 created: 2025-09-11
-feature: (fill in with feature key and github tracking issues once accepted)
+feature: TBD
 ---
 
 ## Summary
