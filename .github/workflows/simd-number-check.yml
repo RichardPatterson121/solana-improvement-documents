@@ -1,0 +1,61 @@
+name: SIMD Number Uniqueness Check
+
+on:
+  pull_request:
+    types:
+      - opened
+      - reopened
+      - synchronize
+    paths:
+      - 'proposals/**.md'
+
+jobs:
+  check-simd-number:
+    name: Check SIMD Number Uniqueness
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check for duplicate SIMD numbers
+        run: |
+          python3 << 'PYEOF'
+          import os
+          import re
+          import sys
+          import yaml
+
+          simd_numbers = {}
+          errors = []
+
+          for filename in sorted(os.listdir('proposals')):
+              if not filename.endswith('.md'):
+                  continue
+              filepath = os.path.join('proposals', filename)
+              with open(filepath, 'r', encoding='utf-8') as f:
+                  content = f.read()
+              fm_match = re.match(r'^---\n(.*?)\n---', content, re.DOTALL)
+              if not fm_match:
+                  continue
+              try:
+                  fm = yaml.safe_load(fm_match.group(1))
+              except Exception:
+                  continue
+              if 'simd' not in fm:
+                  continue
+              num = str(fm['simd']).zfill(4)
+              if num in simd_numbers:
+                  errors.append(f"Duplicate SIMD number {num}: {simd_numbers[num]} and {filepath}")
+              else:
+                  simd_numbers[num] = filepath
+
+          if errors:
+              for e in errors:
+                  print(f'ERROR: {e}')
+              sys.exit(1)
+          else:
+              print(f'All {len(simd_numbers)} SIMD numbers are unique.')
+          PYEOF
