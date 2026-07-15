@@ -1,0 +1,275 @@
+
+═══════════════════════════════════════════════════════════════════════════════
+                    END USER LICENSE AGREEMENT (EULA)
+                          ASK ASI QUANTUM SOFTWARE
+═══════════════════════════════════════════════════════════════════════════════
+
+Last Updated: October 21, 2025
+Effective Date: October 21, 2025
+
+THIS IS A LEGAL AGREEMENT BETWEEN YOU (THE "END USER") AND RICHARD PATTERSON 
+(THE "LICENSOR"). BY INSTALLING, COPYING, OR OTHERWISE USING THE SOFTWARE, YOU 
+AGREE TO BE BOUND BY THE TERMS OF THIS EULA. IF YOU DO NOT AGREE TO THE TERMS 
+OF THIS EULA, DO NOT INSTALL OR USE THE SOFTWARE.
+
+═══════════════════════════════════════════════════════════════════════════════
+1. DEFINITIONS
+═══════════════════════════════════════════════════════════════════════════════
+
+"Software" means the ASK ASI QUANTUM software application, including all quantum
+computing modules, artificial intelligence algorithms, documentation, and any 
+updates or modifications provided by Licensor.
+
+"Licensor" means Richard Patterson, the sole owner and developer of the Software.
+
+"End User" or "You" means the individual or entity that has obtained a license 
+to use the Software.
+
+"Intellectual Property" means all patents, copyrights, trade secrets, trademarks,
+and other proprietary rights in the Software.
+
+═══════════════════════════════════════════════════════════════════════════════
+2. GRANT OF LICENSE
+═══════════════════════════════════════════════════════════════════════════════
+
+Subject to the terms of this EULA, Licensor grants You a limited, non-exclusive,
+non-transferable, revocable license to:
+
+  a) Install and use the Software on a single device or server
+  b) Access the Software's functionality for Your personal or internal business use
+  c) Make one backup copy of the Software for archival purposes only
+
+This license does NOT grant You any ownership rights to the Software. All rights
+not expressly granted herein are reserved by the Licensor.
+
+═══════════════════════════════════════════════════════════════════════════════
+3. RESTRICTIONS
+═══════════════════════════════════════════════════════════════════════════════
+
+You SHALL NOT:
+
+  a) Copy, distribute, or transfer the Software to any third party
+  b) Modify, adapt, translate, reverse engineer, decompile, or disassemble the 
+     Software or create derivative works based upon the Software
+  c) Remove, alter, or obscure any proprietary notices on the Software
+  d) Rent, lease, loan, sublicense, or provide commercial hosting services with 
+     the Software
+  e) Use the Software for any illegal purpose or in violation of any applicable laws
+  f) Attempt to bypass or defeat any security features or access controls
+  g) Use the Software to develop competing products or services
+  h) Extract, reuse, or repurpose any quantum algorithms or AI modules
+  i) Use the Software in any manner that could damage, disable, or impair the 
+     Software or interfere with other users
+
+═══════════════════════════════════════════════════════════════════════════════
+4. INTELLECTUAL PROPERTY RIGHTS
+═══════════════════════════════════════════════════════════════════════════════
+
+The Software and all Intellectual Property rights therein are and shall remain 
+the exclusive property of Richard Patterson. This EULA does not convey any 
+ownership interest in or to the Software, but only a limited right of use that 
+is revocable in accordance with the terms of this EULA.
+
+The Software contains proprietary quantum computing algorithms, artificial 
+intelligence methodologies, and trade secrets that constitute valuable 
+intellectual property. Unauthorized use or disclosure may result in irreparable 
+harm to the Licensor.
+
+═══════════════════════════════════════════════════════════════════════════════
+5. OWNERSHIP OF DATA
+═══════════════════════════════════════════════════════════════════════════════
+
+You retain all rights to data You input into the Software. However, You grant 
+Licensor a limited license to process such data solely for the purpose of 
+providing the Software's functionality to You.
+
+Licensor will not sell, share, or distribute Your data to third parties without 
+Your express written consent, except as required by law.
+
+═══════════════════════════════════════════════════════════════════════════════
+6. UPDATES AND UPGRADES
+═══════════════════════════════════════════════════════════════════════════════
+
+Licensor may, but is not obligated to, provide updates, upgrades, or new versions
+of the Software. Any such updates shall be subject to the terms of this EULA 
+unless accompanied by a separate license agreement.
+
+You acknowledge that updates may require You to accept additional or modified 
+terms before installation.
+
+═══════════════════════════════════════════════════════════════════════════════
+7. TERM AND TERMINATION
+═══════════════════════════════════════════════════════════════════════════════
+
+This EULA is effective upon Your acceptance and shall continue until terminated.
+
+TERMINATION BY YOU:
+You may terminate this EULA at any time by ceasing all use of the Software and
+destroying all copies in Your possession.
+
+TERMINATION BY LICENSOR:
+Licensor may terminate this EULA immediately if You breach any term of this 
+agreement. Upon termination:
+
+  a) Your license to use the Software immediately ceases
+  b) You must destroy all copies of the Software in Your possession
+  c) You must cease all use of any proprietary algorithms or methodologies
+  d) Licensor may pursue all available legal remedies for breach
+
+Sections 4, 8, 9, 10, 11, and 12 shall survive termination of this EULA.
+
+═══════════════════════════════════════════════════════════════════════════════
+8. WARRANTY DISCLAIMER
+═══════════════════════════════════════════════════════════════════════════════
+
+THE SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
+INCLUDING BUT NOT LIMITED TO WARRANTIES OF MERCHANTABILITY, FITNESS FOR A 
+PARTICULAR PURPOSE, AND NON-INFRINGEMENT.
+
+LICENSOR DOES NOT WARRANT THAT:
+  a) The Software will meet Your requirements
+  b) The Software will be uninterrupted, timely, secure, or error-free
+  c) The results obtained from use of the Software will be accurate or reliable
+  d) Any errors in the Software will be corrected
+
+You assume all risk associated with the use of the Software. The entire risk as
+to satisfactory quality, performance, accuracy, and effort is with You.
+
+═══════════════════════════════════════════════════════════════════════════════
+9. LIMITATION OF LIABILITY
+═══════════════════════════════════════════════════════════════════════════════
+
+TO THE MAXIMUM EXTENT PERMITTED BY APPLICABLE LAW, IN NO EVENT SHALL LICENSOR BE
+LIABLE FOR ANY SPECIAL, INCIDENTAL, INDIRECT, CONSEQUENTIAL, OR PUNITIVE DAMAGES
+WHATSOEVER (INCLUDING, WITHOUT LIMITATION, DAMAGES FOR LOSS OF BUSINESS PROFITS,
+BUSINESS INTERRUPTION, LOSS OF DATA, OR ANY OTHER PECUNIARY LOSS) ARISING OUT OF
+THE USE OF OR INABILITY TO USE THE SOFTWARE, EVEN IF LICENSOR HAS BEEN ADVISED 
+OF THE POSSIBILITY OF SUCH DAMAGES.
+
+IN NO EVENT SHALL LICENSOR'S TOTAL LIABILITY TO YOU FOR ALL DAMAGES EXCEED THE
+AMOUNT ACTUALLY PAID BY YOU FOR THE SOFTWARE LICENSE (IF ANY).
+
+Some jurisdictions do not allow the exclusion or limitation of incidental or
+consequential damages, so the above limitation may not apply to You.
+
+═══════════════════════════════════════════════════════════════════════════════
+10. INDEMNIFICATION
+═══════════════════════════════════════════════════════════════════════════════
+
+You agree to indemnify, defend, and hold harmless Licensor from and against any
+and all claims, damages, losses, liabilities, costs, and expenses (including 
+reasonable attorneys' fees) arising from:
+
+  a) Your use or misuse of the Software
+  b) Your breach of this EULA
+  c) Your violation of any rights of another person or entity
+  d) Your violation of any applicable laws or regulations
+
+═══════════════════════════════════════════════════════════════════════════════
+11. CONFIDENTIALITY AND TRADE SECRETS
+═══════════════════════════════════════════════════════════════════════════════
+
+You acknowledge that the Software contains valuable trade secrets and confidential
+information of Licensor. You agree to:
+
+  a) Maintain the confidentiality of the Software and its underlying algorithms
+  b) Not disclose any aspect of the Software's functionality or architecture to 
+     third parties
+  c) Use the same degree of care to protect the Software as You use for Your own
+     confidential information, but in no event less than reasonable care
+
+Unauthorized disclosure or misappropriation of Licensor's trade secrets may result
+in civil and criminal penalties under the Economic Espionage Act, the Defend 
+Trade Secrets Act, and applicable state laws.
+
+═══════════════════════════════════════════════════════════════════════════════
+12. EXPORT COMPLIANCE
+═══════════════════════════════════════════════════════════════════════════════
+
+The Software may be subject to export control laws and regulations. You agree to
+comply with all applicable U.S. and international export laws and regulations,
+including but not limited to the Export Administration Regulations (EAR) and 
+sanctions programs administered by the Office of Foreign Assets Control (OFAC).
+
+You represent and warrant that You are not located in, under the control of, or
+a national or resident of any restricted country, and that You are not on any
+U.S. government list of prohibited or restricted parties.
+
+═══════════════════════════════════════════════════════════════════════════════
+13. GOVERNING LAW AND JURISDICTION
+═══════════════════════════════════════════════════════════════════════════════
+
+This EULA shall be governed by and construed in accordance with the laws of the
+United States and the State where Licensor resides, without regard to its 
+conflict of law provisions.
+
+Any legal action or proceeding arising out of or relating to this EULA shall be
+instituted exclusively in federal or state courts located in Licensor's 
+jurisdiction, and You consent to personal jurisdiction in such courts.
+
+═══════════════════════════════════════════════════════════════════════════════
+14. SEVERABILITY
+═══════════════════════════════════════════════════════════════════════════════
+
+If any provision of this EULA is held to be invalid, illegal, or unenforceable,
+the validity, legality, and enforceability of the remaining provisions shall not
+be affected or impaired thereby.
+
+═══════════════════════════════════════════════════════════════════════════════
+15. ENTIRE AGREEMENT
+═══════════════════════════════════════════════════════════════════════════════
+
+This EULA constitutes the entire agreement between You and Licensor concerning
+the Software and supersedes all prior or contemporaneous oral or written 
+communications, proposals, and representations with respect to the Software.
+
+No amendment to or modification of this EULA will be binding unless in writing
+and signed by an authorized representative of Licensor.
+
+═══════════════════════════════════════════════════════════════════════════════
+16. WAIVER
+═══════════════════════════════════════════════════════════════════════════════
+
+The failure of Licensor to enforce any right or provision of this EULA will not
+constitute a waiver of such right or provision unless acknowledged and agreed to
+by Licensor in writing.
+
+═══════════════════════════════════════════════════════════════════════════════
+17. ASSIGNMENT
+═══════════════════════════════════════════════════════════════════════════════
+
+You may not assign or transfer this EULA or any rights granted hereunder, by
+operation of law or otherwise, without Licensor's prior written consent. Any
+attempted assignment in violation of this Section shall be void.
+
+Licensor may assign this EULA without Your consent.
+
+═══════════════════════════════════════════════════════════════════════════════
+18. ACCEPTANCE OF TERMS
+═══════════════════════════════════════════════════════════════════════════════
+
+BY CLICKING "I AGREE," INSTALLING THE SOFTWARE, OR USING THE SOFTWARE IN ANY 
+MANNER, YOU ACKNOWLEDGE THAT YOU HAVE READ THIS EULA, UNDERSTAND IT, AND AGREE 
+TO BE BOUND BY ITS TERMS AND CONDITIONS.
+
+IF YOU DO NOT AGREE TO THESE TERMS, DO NOT INSTALL, COPY, OR USE THE SOFTWARE.
+
+═══════════════════════════════════════════════════════════════════════════════
+19. CONTACT INFORMATION
+═══════════════════════════════════════════════════════════════════════════════
+
+For questions about this EULA or to request permissions beyond the scope of this
+license, please contact:
+
+Richard Patterson
+Email: rich01202003@gmail.com
+Phone: 330-203-8584
+Website: artificialsuperintelligence.org
+
+═══════════════════════════════════════════════════════════════════════════════
+
+© 2025 Richard Patterson. All Rights Reserved.
+
+END OF END USER LICENSE AGREEMENT
+
+═══════════════════════════════════════════════════════════════════════════════

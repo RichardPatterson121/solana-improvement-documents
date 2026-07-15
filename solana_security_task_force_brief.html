@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Proprietary Module Map for a Solana Security Task Force</title>
+  <style>
+    :root {
+      --bg: #0b1020;
+      --panel: #11182d;
+      --text: #e8eefc;
+      --muted: #a8b3cf;
+      --accent: #7cc4ff;
+      --border: rgba(124, 196, 255, 0.18);
+      --code: #0f1730;
+      --good: #77e3b5;
+      --warn: #ffd27d;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Inter, Segoe UI, Roboto, Arial, sans-serif;
+      background: radial-gradient(circle at top, #16213f 0%, var(--bg) 50%);
+      color: var(--text);
+      line-height: 1.6;
+    }
+    .wrap { max-width: 1100px; margin: 0 auto; padding: 48px 24px 64px; }
+    .hero {
+      padding: 36px;
+      background: linear-gradient(180deg, rgba(17,24,45,0.96), rgba(12,18,36,0.96));
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      box-shadow: 0 12px 40px rgba(0,0,0,.28);
+    }
+    .eyebrow { color: var(--accent); text-transform: uppercase; letter-spacing: .14em; font-size: 12px; }
+    h1 { margin: 10px 0 12px; font-size: clamp(30px, 5vw, 54px); line-height: 1.08; }
+    .meta { color: var(--muted); font-size: 15px; }
+    .note {
+      margin-top: 18px; padding: 14px 16px; border-left: 4px solid var(--warn);
+      background: rgba(255, 210, 125, 0.08); color: #f4e8c6; border-radius: 10px;
+    }
+    section { margin-top: 28px; padding: 28px; background: rgba(17,24,45,0.78); border: 1px solid var(--border); border-radius: 18px; }
+    h2 { margin: 0 0 14px; font-size: 26px; }
+    p { margin: 0 0 14px; color: #d8e1f7; }
+    .grid { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
+    .card {
+      padding: 18px; border-radius: 14px; background: rgba(15, 23, 48, .9);
+      border: 1px solid var(--border);
+    }
+    .card h3 { margin: 0 0 8px; font-size: 18px; color: var(--accent); }
+    .badge {
+      display: inline-block; margin-top: 10px; padding: 4px 10px; border-radius: 999px;
+      background: rgba(124,196,255,.12); color: var(--accent); font-size: 12px;
+    }
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; overflow: hidden; border-radius: 12px; }
+    th, td { padding: 12px 12px; border-bottom: 1px solid var(--border); vertical-align: top; }
+    th { text-align: left; color: var(--accent); background: rgba(124,196,255,.06); }
+    code, pre {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      background: var(--code);
+      color: #dce6ff;
+      border-radius: 10px;
+    }
+    pre { padding: 16px; overflow-x: auto; border: 1px solid var(--border); }
+    .footer { margin-top: 24px; color: var(--muted); font-size: 13px; text-align: center; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="hero">
+      <div class="eyebrow">Restricted internal briefing</div>
+      <h1>Proprietary Module Map for a Solana Security Task Force</h1>
+      <p class="meta">Authored by Richard Patterson</p>
+      <div class="note">Sensitive subject matter: retain within this conversation only and do not distribute externally.</div>
+    </div>
+
+    <section>
+      <h2>Overview</h2>
+      <p>This system is a governance-controlled security operating model for Solana infrastructure. It combines continuous observation, controlled validation, incident triage, evidence preservation, authority separation, and bounded containment into a single auditable workflow.</p>
+      <p>The design is intentionally defensive. It is built to detect threats early, classify impact, and respond only through pre-authorized actions that are traceable, reversible where possible, and limited by policy.</p>
+    </section>
+
+    <section>
+      <h2>Operating Principles</h2>
+      <div class="grid">
+        <div class="card"><h3>Observation first</h3><p>Monitor continuously, but keep intervention threshold-gated.</p><span class="badge">Sentinel</span></div>
+        <div class="card"><h3>Least privilege</h3><p>Keep sensitive authority separate from infrastructure execution.</p><span class="badge">Vault</span></div>
+        <div class="card"><h3>Governed action</h3><p>Require approval for any action affecting funds, authorities, or availability.</p><span class="badge">Governance</span></div>
+        <div class="card"><h3>Preserve evidence</h3><p>Capture chain of custody before and during containment.</p><span class="badge">Evidence</span></div>
+      </div>
+    </section>
+
+    <section>
+      <h2>Module Structure</h2>
+      <table>
+        <thead>
+          <tr><th>Module</th><th>Purpose</th><th>Authority</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Sentinel</td><td>Passive surveillance and anomaly watch</td><td>None</td></tr>
+          <tr><td>Probe Mesh</td><td>Controlled verification of suspected weaknesses</td><td>None</td></tr>
+          <tr><td>Intake</td><td>Normalize and deduplicate incoming events</td><td>None</td></tr>
+          <tr><td>Triage</td><td>Score severity and route incidents</td><td>Recommendation only</td></tr>
+          <tr><td>Beak</td><td>Execute governed containment actions</td><td>Controlled</td></tr>
+          <tr><td>Quarantine</td><td>Isolate compromised or suspicious assets</td><td>Controlled</td></tr>
+          <tr><td>Vault</td><td>Protect keys, signer domains, and secrets</td><td>Highest trust</td></tr>
+          <tr><td>Evidence</td><td>Preserve immutable incident artifacts</td><td>Read-only preservation</td></tr>
+          <tr><td>Continuity</td><td>Maintain service availability and recovery</td><td>Controlled</td></tr>
+          <tr><td>Governance</td><td>Approve threshold actions and policy release</td><td>Final approval</td></tr>
+          <tr><td>Assurance</td><td>Audit, test, and validate control effectiveness</td><td>None</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>Response Model</h2>
+      <p>The response model moves from observe and harden, to contain and reroute, to authority-protective emergency action. Each step expands capability only when risk and policy conditions justify it.</p>
+      <pre>Class I   Observe and harden
+Class II  Contain and reroute
+Class III Authority-protective emergency action</pre>
+    </section>
+
+    <section>
+      <h2>Implementation Order</h2>
+      <p>The recommended build sequence is Vault and Governance first, then Sentinel and Intake, then Triage, Evidence, and Continuity, and finally Probe Mesh, Quarantine, and Beak. That order ensures authority safety and decision quality are established before active containment is enabled.</p>
+      <p>In practice, the first milestone should deliver passive visibility and governed approvals only, the second should allow limited containment, and the third should support full emergency action after tabletop validation and recovery drills.</p>
+    </section>
+
+    <div class="footer">Confidential internal document prepared for conversation-only review.</div>
+  </div>
+</body>
+</html>
