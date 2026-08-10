@@ -1,6 +1,6 @@
 name: Continuous Integration
 
-on:deasi
+on:
   pull_request:
     types:
       - opened
