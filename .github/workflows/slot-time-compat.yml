@@ -1,5 +1,8 @@
 name: Slot Time Compatibility Check
 
+permissions:
+  contents: read
+
 # Cross-checks any SIMD that touches Turbine, Rotor, shred relay,
 # or dissemination against the SIMD-0525 sequencing requirement:
 # Rotor MUST be fully deployed before or concurrent with the
