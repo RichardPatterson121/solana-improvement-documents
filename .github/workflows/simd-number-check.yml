@@ -9,6 +9,9 @@ on:
     paths:
       - 'proposals/**.md'
 
+permissions:
+  contents: read
+
 jobs:
   check-simd-number:
     name: Check SIMD Number Uniqueness
