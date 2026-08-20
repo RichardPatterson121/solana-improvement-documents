@@ -1,5 +1,8 @@
 name: SIMD Proposal Validation
 
+permissions:
+  contents: read
+
 on:
   pull_request:
     types:
