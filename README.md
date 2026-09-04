@@ -1,4 +1,4 @@
-# Solana Improvement Documents (SIMDs)
+6# Solana Improvement Documents (SIMDs)
 
 The goal of the SIMD project is to standardize and provide high-quality
 documentation for Solana and its ecosystem. This repository tracks past and
